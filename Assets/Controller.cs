@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine.Audio;
 using UnityEngine;
 using System.IO;
+using System;
+using System.Linq;
 
 [RequireComponent(typeof(SerialController))]
 public class Controller : MonoBehaviour
@@ -11,6 +13,9 @@ public class Controller : MonoBehaviour
     public AudioMixerGroup mixer;
     public AudioSlider[] sld;
     SerialController sc;
+    [SerializeField] bool testMode;
+    [SerializeField] TextAsset testCase;
+    IEnumerator<string> testData;
 
     [System.Serializable]
     struct AudioSetting {
@@ -27,18 +32,28 @@ public class Controller : MonoBehaviour
     {
         sc = GetComponent<SerialController>();
         dataPath = Application.persistentDataPath + dataPath;
+        if (testMode)
+        {
+            testData = testCase.text.Split(Environment.NewLine).AsEnumerable().GetEnumerator();
+        }
     }
     
     void Start()
     {
         LoadData();
 
+        if (testMode)
+        {
+            StartCoroutine(DoTest());
+        }
     }
 
     void Update()
     {
+        if (testMode) { return; }
         string s = sc.ReadSerialMessage();
         if (s != null){
+            Debug.Log(s);
             s = s.Trim(toTrim);
             string[] arr = s.Split(',');
             for (int i = 0; i < arr.Length && i < sources.Length; i++){
@@ -47,8 +62,28 @@ public class Controller : MonoBehaviour
                     float modVal = Mathf.InverseLerp(sld[i].max.value, sld[i].min.value, value);
                     sources[i].volume = modVal;
                     sld[i].SetValue(modVal);
+                    sld[i].SetRawValue(value);
                 }
             }
+        }
+    }
+
+    IEnumerator DoTest() {
+        while (testData.MoveNext()) {
+            string s = testData.Current.Trim(toTrim);
+            string[] arr = s.Split(',');
+            for (int i = 0; i < arr.Length && i < sources.Length; i++)
+            {
+                if (float.TryParse(arr[i], out float value))
+                {
+
+                    float modVal = Mathf.InverseLerp(sld[i].max.value, sld[i].min.value, value);
+                    sources[i].volume = modVal;
+                    sld[i].SetValue(modVal);
+                    sld[i].SetRawValue(value);
+                }
+            }
+            yield return new WaitForSeconds(.3f);
         }
     }
 
@@ -92,6 +127,21 @@ public class Controller : MonoBehaviour
         }
 
         File.WriteAllLines(dataPath, s);
+    }
+
+    public void SetMinimum()
+    {
+        foreach (AudioSlider slider in sld)
+        {
+            slider.min.value = slider.rawValue;
+        }
+    }
+    public void SetMaximum()
+    {
+        foreach (AudioSlider slider in sld)
+        {
+            slider.max.value = slider.rawValue;
+        }
     }
 
 }
