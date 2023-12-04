@@ -133,14 +133,14 @@ public class Controller : MonoBehaviour
     {
         foreach (AudioSlider slider in sld)
         {
-            slider.min.value = slider.rawValue;
+            slider.max.value = slider.rawValue;
         }
     }
     public void SetMaximum()
     {
         foreach (AudioSlider slider in sld)
         {
-            slider.max.value = slider.rawValue;
+            slider.min.value = slider.rawValue;
         }
     }
 
