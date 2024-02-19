@@ -144,4 +144,13 @@ public class Controller : MonoBehaviour
         }
     }
 
+    public void ResetMinMax()
+    { 
+        foreach (AudioSlider slider in sld)
+        {
+            slider.min.value = slider.min.minValue;
+            slider.max.value = slider.max.maxValue;
+        }
+    }
+
 }
